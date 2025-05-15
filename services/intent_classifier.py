@@ -76,7 +76,7 @@ Ta réponse doit être uniquement l'objet JSON, sans texte supplémentaire avant
         
         # Call Groq API
         chat_completion = client.chat.completions.create(
-            model="meta-llama/Llama-4-Scout-17B-16k-Instruct",
+            model="meta-llama/llama-4-scout-17b-16e-instruct",  
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}

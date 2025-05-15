@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pymilvus import connections, Collection
 
 # Milvus configuration
@@ -7,13 +7,19 @@ MILVUS_PORT = "19530"
 COLLECTION_NAME = "content_items"
 VECTOR_FIELD_NAME = "embedding"
 
-def search_content(query_embedding: List[float], top_k: int = 3) -> List[Dict]:
+def search_content(query_embedding: List[float], top_k: int = 3, filter_expr: Optional[str] = None) -> List[Dict]:
     """
-    Search Milvus collection for similar content using the query embedding.
+    Search Milvus collection for similar content using the query embedding and optional filters.
     
     Args:
         query_embedding (List[float]): The embedding vector of the query
         top_k (int): Number of results to return (default: 3)
+        filter_expr (Optional[str]): Milvus filter expression to apply to the search.
+            Examples:
+            - Filter by year: 'date LIKE "2017%"'
+            - Filter by content type: 'type == "match"'
+            - Compound filter: 'type == "match" AND date LIKE "2017%"'
+            If None, no filter will be applied.
         
     Returns:
         List[Dict]: List of search results, each containing the document fields
@@ -34,12 +40,13 @@ def search_content(query_embedding: List[float], top_k: int = 3) -> List[Dict]:
         "params": {"nprobe": 10}
     }
     
-    # Perform search
+    # Perform search with optional filter
     results = collection.search(
         data=[query_embedding],
         anns_field=VECTOR_FIELD_NAME,
         param=search_params,
         limit=top_k,
+        expr=filter_expr,  # Apply the filter expression if provided
         output_fields=['id', 'type', 'title', 'description', 'date', 'time', 'extra'],
         consistency_level="Strong"
     )
