@@ -8,13 +8,42 @@ from groq import Groq
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define French intent categories
+# Define French intent categories with rich descriptions
 intent_categories_fr = {
-    "match_schedule": "L'utilisateur veut connaître la date d'un match à venir (par exemple, 'Quand est le prochain match du WAC ?').",
-    "match_score": "L'utilisateur cherche les résultats ou le score d'un match déjà joué, potentiellement en mentionnant une année (par exemple, 'Résultat match Wydad hier', 'match Raja 2017').",
-    "latest_news": "L'utilisateur cherche les actualités récentes ou les dernières informations générales (par exemple, 'Quoi de neuf ?', 'Dernières actualités Arryadia').",
-    "program_information": "L'utilisateur demande des informations sur des programmes TV, des émissions, ou du contenu vidéo spécifique (par exemple, 'Montre-moi les documentaires', 'Quand est le journal télévisé ?').",
-    "generic_search": "L'intention de l'utilisateur n'est pas claire, est trop générale, ou ne correspond à aucune autre catégorie spécifique."
+    "match_score": """L'utilisateur recherche des informations sur des matchs passés. Cela peut inclure :
+- Des résultats de matchs spécifiques (scores, statistiques)
+- Des rediffusions ou résumés vidéo de matchs
+- Des articles d'analyse post-match
+- Des références à des années ou dates passées
+- Des noms d'équipes ou de compétitions
+Cette intention couvre tous les contenus liés aux matchs déjà joués, qu'ils soient sous forme de vidéos, articles ou données de match.""",
+
+    "match_schedule": """L'utilisateur s'intéresse à la programmation des matchs à venir. Cela inclut :
+- Les dates et heures des prochains matchs
+- Les chaînes de diffusion
+- Les compétitions à venir
+- Les équipes qui vont s'affronter
+Cette intention concerne la planification et l'information sur les événements sportifs futurs.""",
+
+    "latest_news": """L'utilisateur cherche des informations actuelles et récentes. Cela peut être :
+- Des actualités sportives du jour
+- Des dernières nouvelles sur les équipes
+- Des informations sur les transferts
+- Des mises à jour sur les compétitions en cours
+Cette intention couvre tout le contenu d'actualité récent, qu'il soit sportif ou général.""",
+
+    "program_information": """L'utilisateur recherche des informations sur la programmation TV. Cela inclut :
+- Des émissions de télévision
+- Des documentaires
+- Des magazines sportifs
+- Des émissions spéciales
+Cette intention concerne le contenu programmé régulièrement, distinct des matchs en direct ou des actualités.""",
+
+    "generic_search": """L'utilisateur effectue une recherche générale ou ambiguë qui ne correspond pas clairement aux autres catégories. Cela peut être :
+- Des requêtes trop vagues
+- Des questions générales sur le sport
+- Des recherches qui touchent plusieurs catégories
+Cette intention sert de fallback pour les requêtes qui ne rentrent pas dans les autres catégories."""
 }
 
 def classify_intent(query: str) -> Tuple[str, float, str]:
@@ -40,36 +69,68 @@ def classify_intent(query: str) -> Tuple[str, float, str]:
         client = Groq(api_key=api_key)
         
         # Construct system prompt in French
-        system_prompt = f"""Tu es un classificateur d'intention expert pour SNRT (Société Nationale de Radiodiffusion et de Télévision du Maroc). 
-Ta tâche est d'analyser la requête de l'utilisateur et de la classer dans l'une des catégories prédéfinies.
+        system_prompt = """Tu es un classificateur d'intention expert pour SNRT (Société Nationale de Radiodiffusion et de Télévision du Maroc). 
+Ta tâche est d'analyser la requête de l'utilisateur et de déterminer laquelle des descriptions d'intention ci-dessous correspond le mieux à son objectif.
 
 Tu dois renvoyer ta réponse sous forme d'objet JSON avec trois clés :
 - "intent" : l'identifiant de la catégorie (doit être l'une des clés suivantes: {', '.join(intent_categories_fr.keys())})
 - "confidence" : un nombre décimal entre 0.0 et 1.0
 - "reasoning" : une brève explication en français pour ta classification
 
-Voici les intentions disponibles :
+Voici les intentions disponibles avec leurs descriptions détaillées :
 """
         for key, desc in intent_categories_fr.items():
-            system_prompt += f"- {key}: {desc}\n"
-        
+            system_prompt += f"\n{key}:\n{desc}\n"
+
         system_prompt += """
-Instructions spécifiques pour la classification :
+Voici quelques exemples pour te guider :
 
-1. Détection temporelle et sportive :
-   - Si la requête contient une année (ex: 2017, 2022) ou une référence temporelle passée (hier, la semaine dernière) ET des termes liés au sport (match, score, Wydad, Raja, football), l'intention est très probablement "match_score". Attribue une confiance élevée (0.8-1.0) dans ce cas.
-   - Si la requête contient une référence temporelle future (demain, la semaine prochaine) ET des termes liés au sport, l'intention est probablement "match_schedule".
+Exemple 1:
+Requête utilisateur : "Je veux revoir le match du Wydad contre Raja de l'année dernière"
+Réponse JSON attendue :
+{
+  "intent": "match_score",
+  "confidence": 0.9,
+  "reasoning": "L'utilisateur souhaite revoir un match passé (Wydad vs Raja, l'année dernière), ce qui correspond à une recherche de résultats ou de rediffusions."
+}
 
-2. Termes sportifs courants :
-   - Les mots comme "match", "score", "résultat", "Wydad", "Raja", "WAC", "FAR" sont des indicateurs forts d'intentions liées au sport.
-   - La présence d'années ou de dates est un indicateur fort pour "match_score".
+Exemple 2:
+Requête utilisateur : "C'est quand le prochain match de l'équipe nationale ?"
+Réponse JSON attendue :
+{
+  "intent": "match_schedule",
+  "confidence": 0.95,
+  "reasoning": "L'utilisateur demande la date d'un futur match de l'équipe nationale, indiquant un intérêt pour la programmation à venir."
+}
 
-3. Général :
-   - Si la requête est ambiguë ou ne correspond clairement à aucune catégorie, utilise "generic_search" avec une confiance basse (0.3-0.5).
-   - La confiance doit refléter la certitude de la classification (0.0-1.0).
+Exemple 3:
+Requête utilisateur : "actualités sportives aujourd'hui"
+Réponse JSON attendue :
+{
+  "intent": "latest_news",
+  "confidence": 0.85,
+  "reasoning": "L'utilisateur cherche les informations sportives du jour, ce qui correspond à une recherche d'actualités récentes."
+}
 
-Ta réponse doit être uniquement l'objet JSON, sans texte supplémentaire avant ou après.
-"""
+Exemple 4:
+Requête utilisateur : "Quand passe le magazine sportif hebdomadaire ?"
+Réponse JSON attendue :
+{
+  "intent": "program_information",
+  "confidence": 0.9,
+  "reasoning": "L'utilisateur s'intéresse à la programmation d'une émission régulière, ce qui correspond à une recherche d'information sur la programmation TV."
+}
+
+Exemple 5:
+Requête utilisateur : "tout sur le football marocain"
+Réponse JSON attendue :
+{
+  "intent": "generic_search",
+  "confidence": 0.6,
+  "reasoning": "La requête est trop générale et pourrait concerner des actualités, des matchs, ou des programmes. Une recherche générique est plus appropriée."
+}
+
+Ta réponse doit être uniquement l'objet JSON, sans texte supplémentaire avant ou après."""
         
         # Construct user prompt in French
         user_prompt = f'Requête utilisateur : "{query}"\n\nClassifie cette requête.'
