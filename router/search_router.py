@@ -45,15 +45,33 @@ async def search(query_model: SearchQuery):
         # Always add the date condition
         filter_conditions.append(f'date LIKE "{extracted_year}%"')
         
+        # Define content type keywords
+        video_keywords = [
+            "video", "vidéo", "revoir", "rediffusion", "youtube",
+            "replay", "résumé", "résumé", "highlights", "extraits",
+            "montage", "buts", "but", "buts", "but", "match complet"
+        ]
+        
+        article_keywords = [
+            "article", "lire", "nouvelle", "analyse", "commentaire",
+            "reportage", "dossier", "interview", "entretien"
+        ]
+        
         # Check for content type keywords in the query
         query_lower = query_model.query.lower()
-        if "video" in query_lower or "vidéo" in query_lower:
+        
+        # Check for video-related terms
+        if any(keyword in query_lower for keyword in video_keywords):
             filter_conditions.append('type == "video"')
-        elif "article" in query_lower:
+            logger.info(f"Video type detected in query: '{query_model.query}'")
+        # Check for article-related terms
+        elif any(keyword in query_lower for keyword in article_keywords):
             filter_conditions.append('type == "article"')
+            logger.info(f"Article type detected in query: '{query_model.query}'")
         else:
             # Default to 'match' if no specific type is mentioned
             filter_conditions.append('type == "match"')
+            logger.info(f"No specific content type detected, defaulting to 'match' for query: '{query_model.query}'")
         
         # Join all conditions with AND
         filter_expr = " AND ".join(filter_conditions)
