@@ -40,18 +40,19 @@ async def search(query_model: SearchQuery):
     extracted_year = year_match.group(0) if year_match else None
     
     # Apply filter rules based on intent
-    if intent == "match_score" and extracted_year:
+    if intent == "vod_search":
+        filter_conditions = ['type == "video"']
+        if extracted_year:
+            filter_conditions.append(f'date LIKE "{extracted_year}%"')
+        filter_expr = " AND ".join(filter_conditions)
+        logger.info(f"VOD search detected for query: '{query_model.query}', Applying filter: '{filter_expr}'")
+    
+    elif intent == "match_score" and extracted_year:
         filter_conditions = []
         # Always add the date condition
         filter_conditions.append(f'date LIKE "{extracted_year}%"')
         
         # Define content type keywords
-        video_keywords = [
-            "video", "vidéo", "revoir", "rediffusion", "youtube",
-            "replay", "résumé", "résumé", "highlights", "extraits",
-            "montage", "buts", "but", "buts", "but", "match complet"
-        ]
-        
         article_keywords = [
             "article", "lire", "nouvelle", "analyse", "commentaire",
             "reportage", "dossier", "interview", "entretien"
@@ -60,12 +61,8 @@ async def search(query_model: SearchQuery):
         # Check for content type keywords in the query
         query_lower = query_model.query.lower()
         
-        # Check for video-related terms
-        if any(keyword in query_lower for keyword in video_keywords):
-            filter_conditions.append('type == "video"')
-            logger.info(f"Video type detected in query: '{query_model.query}'")
         # Check for article-related terms
-        elif any(keyword in query_lower for keyword in article_keywords):
+        if any(keyword in query_lower for keyword in article_keywords):
             filter_conditions.append('type == "article"')
             logger.info(f"Article type detected in query: '{query_model.query}'")
         else:
@@ -75,13 +72,21 @@ async def search(query_model: SearchQuery):
         
         # Join all conditions with AND
         filter_expr = " AND ".join(filter_conditions)
-        logger.info(f"Query: '{query_model.query}', Intent: '{intent}', Applying filter_expr: '{filter_expr}'")
     
     # 4. Search content in Milvus with filter
     search_results = search_content(
         query_embedding=query_embedding,
         top_k=3,
         filter_expr=filter_expr
+    )
+    
+    # Log comprehensive search request details
+    logger.info(
+        f"Search Request: Query='{query_model.query}', "
+        f"Intent='{intent}', "
+        f"Confidence={confidence:.2f}, "
+        f"Filter='{filter_expr}', "
+        f"ResultsCount={len(search_results)}"
     )
     
     # 5. Format the final response

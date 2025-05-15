@@ -10,13 +10,20 @@ logger = logging.getLogger(__name__)
 
 # Define French intent categories with rich descriptions
 intent_categories_fr = {
+    "vod_search": """L'utilisateur exprime le souhait de regarder une vidéo spécifique ou une rediffusion d'un événement passé. Cela inclut :
+- Des rediffusions de matchs complets
+- Des résumés et moments forts (highlights)
+- Des extraits vidéo d'événements passés
+- Des contenus vidéo archivés
+- Des requêtes contenant des termes comme 'revoir', 'vidéo de', 'regarder', 'YouTube', 'replay'
+Cette intention est spécifiquement pour la recherche de contenu vidéo à la demande, distincte des informations générales sur les matchs.""",
+
     "match_score": """L'utilisateur recherche des informations sur des matchs passés. Cela peut inclure :
 - Des résultats de matchs spécifiques (scores, statistiques)
-- Des rediffusions ou résumés vidéo de matchs
 - Des articles d'analyse post-match
 - Des références à des années ou dates passées
 - Des noms d'équipes ou de compétitions
-Cette intention couvre tous les contenus liés aux matchs déjà joués, qu'ils soient sous forme de vidéos, articles ou données de match.""",
+Cette intention couvre les contenus liés aux matchs déjà joués, principalement sous forme d'articles ou de données de match.""",
 
     "match_schedule": """L'utilisateur s'intéresse à la programmation des matchs à venir. Cela inclut :
 - Les dates et heures des prochains matchs
@@ -86,15 +93,42 @@ Voici les intentions disponibles avec leurs descriptions détaillées :
 Voici quelques exemples pour te guider :
 
 Exemple 1:
-Requête utilisateur : "Je veux revoir le match du Wydad contre Raja de l'année dernière"
+Requête utilisateur : "Je veux revoir le match WAC FAR de 2019 sur Arryadia replay"
+Réponse JSON attendue :
+{
+  "intent": "vod_search",
+  "confidence": 0.95,
+  "reasoning": "L'utilisateur souhaite explicitement revoir un match spécifique ('WAC FAR de 2019') et mentionne des termes liés à la vidéo ('revoir', 'replay'), indiquant une recherche de contenu vidéo à la demande."
+}
+
+Exemple 2:
+Requête utilisateur : "Où puis-je regarder les highlights du match d'hier ?"
+Réponse JSON attendue :
+{
+  "intent": "vod_search",
+  "confidence": 0.9,
+  "reasoning": "L'utilisateur cherche spécifiquement des extraits vidéo ('highlights') d'un match récent, ce qui correspond à une recherche de contenu vidéo à la demande."
+}
+
+Exemple 3:
+Requête utilisateur : "Je veux voir la vidéo du but de la victoire du Raja en 2018"
+Réponse JSON attendue :
+{
+  "intent": "vod_search",
+  "confidence": 0.95,
+  "reasoning": "L'utilisateur demande explicitement à voir une vidéo spécifique d'un moment de match, avec des termes comme 'voir' et 'vidéo', indiquant une recherche de contenu vidéo à la demande."
+}
+
+Exemple 4:
+Requête utilisateur : "Quel était le score du match WAC FAR de 2019 ?"
 Réponse JSON attendue :
 {
   "intent": "match_score",
   "confidence": 0.9,
-  "reasoning": "L'utilisateur souhaite revoir un match passé (Wydad vs Raja, l'année dernière), ce qui correspond à une recherche de résultats ou de rediffusions."
+  "reasoning": "L'utilisateur cherche le résultat d'un match passé spécifique, sans mentionner explicitement le souhait de regarder une vidéo."
 }
 
-Exemple 2:
+Exemple 5:
 Requête utilisateur : "C'est quand le prochain match de l'équipe nationale ?"
 Réponse JSON attendue :
 {
@@ -103,7 +137,7 @@ Réponse JSON attendue :
   "reasoning": "L'utilisateur demande la date d'un futur match de l'équipe nationale, indiquant un intérêt pour la programmation à venir."
 }
 
-Exemple 3:
+Exemple 6:
 Requête utilisateur : "actualités sportives aujourd'hui"
 Réponse JSON attendue :
 {
@@ -112,7 +146,7 @@ Réponse JSON attendue :
   "reasoning": "L'utilisateur cherche les informations sportives du jour, ce qui correspond à une recherche d'actualités récentes."
 }
 
-Exemple 4:
+Exemple 7:
 Requête utilisateur : "Quand passe le magazine sportif hebdomadaire ?"
 Réponse JSON attendue :
 {
@@ -121,7 +155,7 @@ Réponse JSON attendue :
   "reasoning": "L'utilisateur s'intéresse à la programmation d'une émission régulière, ce qui correspond à une recherche d'information sur la programmation TV."
 }
 
-Exemple 5:
+Exemple 8:
 Requête utilisateur : "tout sur le football marocain"
 Réponse JSON attendue :
 {
