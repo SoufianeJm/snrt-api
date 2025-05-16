@@ -1,9 +1,11 @@
+import os
 from typing import List, Dict, Optional
 from pymilvus import connections, Collection
 
 # Milvus configuration
-MILVUS_HOST = "localhost"
-MILVUS_PORT = "19530"
+# These values are expected to be set in the environment:
+# - MILVUS_URI: The full Zilliz Cloud connection URI (e.g., "https://in01-xxxx.zillizcloud.com")
+# - MILVUS_TOKEN: The Zilliz Cloud API token/key
 COLLECTION_NAME = "content_items"
 VECTOR_FIELD_NAME = "embedding"
 
@@ -24,10 +26,17 @@ def search_content(query_embedding: List[float], top_k: int = 3, filter_expr: Op
     Returns:
         List[Dict]: List of search results, each containing the document fields
     """
-    # Connect to Milvus
+    # Get Milvus connection details from environment
+    milvus_uri = os.getenv("MILVUS_URI")
+    milvus_token = os.getenv("MILVUS_TOKEN")
+    
+    if not milvus_uri or not milvus_token:
+        raise RuntimeError("MILVUS_URI and MILVUS_TOKEN environment variables must be set for Zilliz Cloud connection")
+    
+    # Connect to Zilliz Cloud Milvus instance using URI and token
     connections.connect(
-        host=MILVUS_HOST,
-        port=MILVUS_PORT
+        uri=milvus_uri,
+        token=milvus_token
     )
     
     # Get collection and load it

@@ -1,10 +1,28 @@
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file if it exists
+load_dotenv()
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from router.search_router import search_router
 
 app = FastAPI(
     title="SNRT Semantic Search API",
     description="A semantic search API powered by Milvus and Groq",
     version="1.0.0"
+)
+
+# Configure CORS
+origins = ["*"]  # Allow all origins for now, can be restricted later
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include the search router without prefix

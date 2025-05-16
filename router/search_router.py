@@ -9,7 +9,10 @@ from services.milvus_query import search_content
 from services.formatter import format_response
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Create router instance
@@ -26,11 +29,15 @@ async def search(query_model: SearchQuery):
     Processes the query through intent classification, embedding, and Milvus search.
     Returns formatted results based on the search intent and content matches.
     """
+    logger.info(f"Received search request: '{query_model.query}'")
+    
     # 1. Classify intent
     intent, confidence, intent_description = classify_intent(query_model.query)
+    logger.info(f"Intent classification: '{intent}' (confidence: {confidence:.2f})")
     
     # 2. Embed the query
     query_embedding = embed_query(query_model.query)
+    logger.debug("Query embedding generated successfully")
     
     # 3. Build filter expression based on intent and query content
     filter_expr: Optional[str] = None
@@ -38,6 +45,8 @@ async def search(query_model: SearchQuery):
     # Extract year from query if present
     year_match = re.search(r'\b(20\d{2}|19\d{2})\b', query_model.query)
     extracted_year = year_match.group(0) if year_match else None
+    if extracted_year:
+        logger.info(f"Year extracted from query: {extracted_year}")
     
     # Apply filter rules based on intent
     if intent == "vod_search":
@@ -82,7 +91,8 @@ async def search(query_model: SearchQuery):
     
     # Log comprehensive search request details
     logger.info(
-        f"Search Request: Query='{query_model.query}', "
+        f"Search Request Summary: "
+        f"Query='{query_model.query}', "
         f"Intent='{intent}', "
         f"Confidence={confidence:.2f}, "
         f"Filter='{filter_expr}', "
@@ -98,4 +108,5 @@ async def search(query_model: SearchQuery):
         query=query_model.query
     )
     
+    logger.info(f"Search request completed successfully with {len(search_results)} results")
     return response 
