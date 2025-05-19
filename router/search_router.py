@@ -9,6 +9,7 @@ from services.milvus_query import search_content
 from services.formatter import format_response
 
 # Configure logging
+# noinspection PyInterpreter
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'

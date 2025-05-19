@@ -28,6 +28,17 @@ app.add_middleware(
 # Include the search router without prefix
 app.include_router(search_router)
 
+@app.get("/health")
+async def health():
+    """
+    Health check endpoint for Fly.io monitoring.
+    Returns a simple OK status to indicate the service is running.
+    """
+    return {"status": "ok"}
+
 @app.get("/")
 async def root():
+    """
+    Root endpoint for API information and debugging.
+    """
     return {"message": "SNRT Semantic Search API"} 
